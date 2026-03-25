@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django's Legacy - Guía de Oficios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Pirata+One&display=swap');
+
+        :root {
+            --color-paper: #d9c5a3;
+            --color-leather: #2b1d12;
+            --color-rdr-red: #931a1a;
+            --color-gold: #c5a059;
+            --color-wood: #1a0f06;
+        }
+
+        body {
+            background-color: var(--color-wood);
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            font-family: 'Special Elite', cursive;
+            color: var(--color-leather);
+            overflow-x: hidden;
+        }
+
+        .rdr-title {
+            font-family: 'Rye', cursive;
+            color: #ffffff;
+            text-shadow: 4px 4px 0px var(--color-rdr-red);
+            letter-spacing: 4px;
+        }
+
+        .paper-bg {
+            background-color: var(--color-paper);
+            background-image: url('https://www.transparenttextures.com/patterns/old-map.png');
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            border: 2px solid #5d4037;
+            position: relative;
+        }
+
+        .job-card {
+            border: 1px solid rgba(0,0,0,0.1);
+            transition: all 0.3s ease-in-out;
+            position: relative;
+        }
+
+        .job-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--color-rdr-red);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            background-color: #e2d1b3;
+        }
+
+        .category-btn {
+            font-family: 'Rye', cursive;
+            background: #2b1d12;
+            border: 1px solid var(--color-gold);
+            color: var(--color-gold);
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .category-btn:hover, .category-btn.active {
+            background: var(--color-rdr-red);
+            color: white;
+            border-color: white;
+        }
+
+        .icon-circle {
+            background: var(--color-rdr-red);
+            color: white;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            border: 2px solid var(--color-leather);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .discord-btn {
+            background: var(--color-leather);
+            color: var(--color-gold) !important;
+            border: 1px solid var(--color-gold);
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .discord-btn:hover {
+            background: var(--color-rdr-red);
+            color: white !important;
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .stamp {
+            opacity: 0.1;
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-size: 4rem;
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--color-wood); }
+        ::-webkit-scrollbar-thumb { background: var(--color-rdr-red); border: 2px solid var(--color-wood); }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-16">
+            <h1 class="rdr-title text-6xl md:text-8xl mb-2">DJANGO'S</h1>
+            <h2 class="rdr-title text-4xl md:text-5xl mb-6">LEGACY</h2>
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <div class="h-[2px] w-20 bg-red-800"></div>
+                <span class="text-white tracking-[0.3em] uppercase text-sm opacity-80">Guía de Oficios y Ciudadanía</span>
+                <div class="h-[2px] w-20 bg-red-800"></div>
+            </div>
+        </header>
+
+        <!-- Filtros -->
+        <div class="flex flex-wrap justify-center gap-3 mb-12">
+            <button onclick="filterJobs('all')" class="category-btn active px-6 py-2 rounded shadow-md">Todos</button>
+            <button onclick="filterJobs('ley')" class="category-btn px-6 py-2 rounded shadow-md">Ley y Orden</button>
+            <button onclick="filterJobs('comercio')" class="category-btn px-6 py-2 rounded shadow-md">Comercio</button>
+            <button onclick="filterJobs('campo')" class="category-btn px-6 py-2 rounded shadow-md">Campo</button>
+            <button onclick="filterJobs('salud')" class="category-btn px-6 py-2 rounded shadow-md">Salud</button>
+        </div>
+
+        <!-- Grid de Oficios -->
+        <div id="jobsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cargado por JS -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="jobModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-overlay">
+        <div class="absolute inset-0" onclick="closeModal()"></div>
+        <div class="paper-bg w-full max-w-3xl max-h-[90vh] overflow-y-auto relative p-8 md:p-12 border-4 border-[#3d2b1f] rounded-sm">
+            <button onclick="closeModal()" class="absolute top-4 right-6 text-4xl hover:text-red-800 transition">&times;</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const jobs = [
+            {
+                id: 'ranchos',
+                category: 'campo',
+                title: 'Ranchos',
+                icon: 'fa-cow',
+                funcion: 'Cosecha y cría animales para vender carnes y cultivos a las tabernas. Elaboración de recetas (mantequilla, etc).',
+                ubicacion: 'McFarlands y exclusivos.',
+                requisitos: 'Sin examen. Ir al rancho y hablar con el Jefe o ticket en discord de negocios.',
+                intro: 'Compra y cultiva alimentos, cría animales para fabricar suministros para las tabernas.',
+                discord: 'https://discord.gg/cgdSRG4B'
+            },
+            {
+                id: 'domador',
+                category: 'campo',
+                title: 'Domador',
+                icon: 'fa-horse',
+                funcion: 'Domar caballos salvajes y entrenarlos para venta o para usuarios.',
+                ubicacion: 'Establos y zonas salvajes.',
+                requisitos: 'Hablar con el jefe/a para entrar en la facción.',
+                intro: 'Domar caballos salvajes, entrenarlos y venderlos, o entrenar caballos de otros ciudadanos.',
+                discord: 'https://discord.gg/cgdSRG4B'
+            },
+            {
+                id: 'tabaquero',
+                category: 'comercio',
+                title: 'Tabaquero',
+                icon: 'fa-smoking',
+                funcion: 'Producir y vender productos derivados mediante un proceso artesanal.',
+                ubicacion: 'Blackwater',
+                requisitos: 'Hablar con el dueño o ticket en discord de negocios.',
+                intro: 'Oficio dedicado a la elaboración de cigarros, pipas y puros. Requiere troncos y hojas de tabaco.',
+                discord: 'https://discord.gg/pmA5hpFH',
+                nota: 'Trabajo enfocado 100% al rol y vocación por sus bajos márgenes de beneficio.'
+            },
+            {
+                id: 'veterinario',
+                category: 'salud',
+                title: 'Veterinario',
+                icon: 'fa-stethoscope',
+                funcion: 'Diagnosticar enfermedades y curar heridas de caballos.',
+                ubicacion: 'Blackwater',
+                requisitos: 'Buscar al encargado o ticket en discord de negocios.',
+                intro: 'Encargado de la salud equina. Esencial para que los caballos puedan ser reanimados o curados.',
+                discord: 'https://discord.gg/pmA5hpFH',
+                nota: 'Si hay un veterinario en la ciudad, los caballos pueden sufrir lesiones que solo tú puedes curar.'
+            },
+            {
+                id: 'periodista',
+                category: 'comercio',
+                title: 'Periodista',
+                icon: 'fa-newspaper',
+                funcion: 'Investigar, recopilar y difundir información relevante para la comunidad.',
+                ubicacion: 'Oficina local en Blackwater.',
+                requisitos: 'Presentarse en la oficina o ticket en discord de negocios.',
+                intro: 'Cubre eventos importantes, realiza entrevistas y busca la verdad para informar al pueblo.',
+                discord: 'https://discord.gg/pmA5hpFH'
+            },
+            {
+                id: 'cura',
+                category: 'salud',
+                title: 'Cura',
+                icon: 'fa-cross',
+                funcion: 'Guía espiritual, apoyo moral y ceremonias (bodas, bautizos, funerales).',
+                ubicacion: 'Iglesias de todas las ciudades.',
+                requisitos: 'Preguntar al cura encargado en la iglesia o ticket en discord.',
+                intro: 'Representa la fe y los valores. Escucha confesiones y aconseja en momentos difíciles.',
+                discord: 'https://discord.gg/pmA5hpFH'
+            },
+            {
+                id: 'agricultor',
+                category: 'campo',
+                title: 'Agricultor',
+                icon: 'fa-seedling',
+                funcion: 'Cultivar y vender productos agrícolas a tabernas y pastelerías.',
+                ubicacion: 'Ranchos y ubicaciones exactas (Macfarlane\'s y más).',
+                requisitos: 'Hablar con el jefe/a.',
+                intro: 'Dedicado al cultivo de la tierra para abastecer los negocios de comida de la frontera.',
+                discord: 'https://discord.gg/cgdSRG4B'
+            },
+            {
+                id: 'tabernero',
+                category: 'comercio',
+                title: 'Tabernero',
+                icon: 'fa-beer-mug-empty',
+                funcion: 'Servir comida y bebida. Gestionar el ambiente social de la ciudad.',
+                ubicacion: 'Todos los pueblos.',
+                requisitos: 'Hablar con el jefe/a.',
+                intro: 'Compra suministros a rancheros y agricultores, haz tratos y compite con otras tabernas.',
+                discord: 'https://discord.gg/cgdSRG4B'
+            },
+            {
+                id: 'artesano',
+                category: 'comercio',
+                title: 'Artesano',
+                icon: 'fa-hammer',
+                funcion: 'Crear muebles, lingotes y casquillos de bala.',
+                ubicacion: 'Todos los pueblos.',
+                requisitos: 'Hablar con el jefe para ingresar a la facción.',
+                intro: 'Pieza clave para la industria. Tus lingotes y casquillos son necesarios para los armeros.',
+                discord: 'https://discord.gg/cgdSRG4B'
+            },
+            {
+                id: 'armero',
+                category: 'comercio',
+                title: 'Armero',
+                icon: 'fa-gun',
+                funcion: 'Fabricación de armas y munición.',
+                ubicacion: 'Todos los pueblos.',
+                requisitos: 'Hablar con el jefe de la armería.',
+                intro: 'Compra suministros al artesano y provee de defensa a los ciudadanos o al NPC.',
+                discord: 'https://discord.gg/cgdSRG4B'
+            },
+            {
+                id: 'cazarrecompensas',
+                category: 'ley',
+                title: 'Cazarrecompensas',
+                icon: 'fa-handcuffs',
+                funcion: 'Busca fugitivos (NPC y jugadores reales).',
+                ubicacion: 'Blackwater, junto a comisaría.',
+                requisitos: 'Sin examen. Colaboración directa con la ley.',
+                intro: 'Usa carteles de misiones y trabaja con la policía para limpiar la frontera de forajidos.',
+                discord: 'https://discord.gg/T5F3sQZn'
+            },
+            {
+                id: 'medico',
+                category: 'salud',
+                title: 'Médico',
+                icon: 'fa-briefcase-medical',
+                funcion: 'Fabricación de medicamentos y atención de pacientes.',
+                ubicacion: 'Clínicas.',
+                requisitos: 'Sin examen. Hablar con un doctor o ticket en discord de sanidad.',
+                intro: 'Fabrica vendas, botiquines y antídotos esenciales para la supervivencia ciudadana.',
+                discord: 'https://discord.gg/cPeMUNWYa4'
+            },
+            {
+                id: 'alcalde',
+                category: 'ley',
+                title: 'Alcalde',
+                icon: 'fa-landmark',
+                funcion: 'Representación de la ciudad y gestión política.',
+                ubicacion: 'Campaña electoral propia.',
+                requisitos: 'Esperar elecciones, postularse y ganar el apoyo del pueblo.',
+                intro: 'Garantiza el bienestar, realiza cambios revolucionarios y ostenta el poder administrativo.',
+                discord: 'N/A'
+            },
+            {
+                id: 'sheriff',
+                category: 'ley',
+                title: 'Sheriff',
+                icon: 'fa-star',
+                funcion: 'Controlar el orden, detener delincuentes y patrullar.',
+                ubicacion: 'Comisaría de Blackwater.',
+                requisitos: 'Sin examen. Entrevista psicológica y hablar con agentes disponibles.',
+                intro: 'Usa armas de fuego, impón el orden y asegura la paz en cada rincón de la ciudad.',
+                discord: 'https://discord.gg/8BWyPmP2vX'
+            },
+            {
+                id: 'pasteleria',
+                category: 'comercio',
+                title: 'Pastelería',
+                icon: 'fa-cake-candles',
+                funcion: 'Venta de dulces y pasteles para civiles.',
+                ubicacion: 'Cualquier ciudad principal.',
+                requisitos: 'Unirse a negocio activo o crear uno nuevo vía ticket.',
+                intro: 'Cocina postres y bebidas. Gestiona precios según la economía y saciedad de cada pastel.',
+                discord: 'https://discord.gg/K5CkcWa6Xw'
+            }
+        ];
+
+        function renderJobs(filter = 'all') {
+            const grid = document.getElementById('jobsGrid');
+            grid.innerHTML = '';
+            
+            const filteredJobs = filter === 'all' ? jobs : jobs.filter(j => j.category === filter);
+
+            filteredJobs.forEach(job => {
+                const card = document.createElement('div');
+                card.className = 'job-card paper-bg p-6 rounded-sm text-center cursor-pointer';
+                card.onclick = () => openJob(job.id);
+                card.innerHTML = `
+                    <div class="icon-circle"><i class="fas ${job.icon} text-xl"></i></div>
+                    <h3 class="rdr-title text-xl mb-2 text-leather" style="text-shadow:none; color:#2b1d12;">${job.title.toUpperCase()}</h3>
+                    <p class="text-xs italic opacity-80 mb-3 uppercase tracking-tighter">Click para detalles</p>
+                    <div class="stamp"><i class="fas ${job.icon}"></i></div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Actualizar botones
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.textContent.toLowerCase().includes(filter) || (filter === 'all' && btn.textContent.includes('Todos'))) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function filterJobs(cat) {
+            renderJobs(cat);
+        }
+
+        function openJob(id) {
+            const job = jobs.find(j => j.id === id);
+            const modal = document.getElementById('jobModal');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <div class="text-center mb-8">
+                    <div class="icon-circle w-20 h-20 text-3xl mb-4"><i class="fas ${job.icon}"></i></div>
+                    <h2 class="rdr-title text-5xl text-leather mb-2" style="text-shadow:none; color:#2b1d12;">${job.title}</h2>
+                    <p class="uppercase tracking-widest text-red-900 font-bold text-sm">Registro Oficial - Django's Legacy</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8 font-serif">
+                    <div class="space-y-6">
+                        <section>
+                            <h4 class="font-black text-red-900 uppercase text-xs mb-2 tracking-widest border-b border-black/20 pb-1">Función Principal</h4>
+                            <p class="text-lg leading-snug">${job.funcion}</p>
+                        </section>
+                        <section>
+                            <h4 class="font-black text-red-900 uppercase text-xs mb-2 tracking-widest border-b border-black/20 pb-1">Ubicación</h4>
+                            <p class="text-lg italic">${job.ubicacion}</p>
+                        </section>
+                    </div>
+                    <div class="space-y-6">
+                        <section>
+                            <h4 class="font-black text-red-900 uppercase text-xs mb-2 tracking-widest border-b border-black/20 pb-1">Acceso</h4>
+                            <p class="text-lg">${job.requisitos}</p>
+                        </section>
+                        <section>
+                            <h4 class="font-black text-red-900 uppercase text-xs mb-2 tracking-widest border-b border-black/20 pb-1">Descripción</h4>
+                            <p class="text-lg italic opacity-90">"${job.intro}"</p>
+                        </section>
+                    </div>
+                </div>
+
+                ${job.nota ? `
+                <div class="mt-8 p-4 bg-red-900/10 border-l-4 border-red-900 text-sm italic">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> ${job.nota}
+                </div>` : ''}
+
+                <div class="mt-10 pt-6 border-t border-black/10 text-center">
+                    <p class="text-xs uppercase font-bold mb-4 opacity-70">Contactar vía Telegrama Oficial</p>
+                    <a href="${job.discord}" target="_blank" class="discord-btn inline-block px-12 py-4 rounded shadow-xl transition-all hover:scale-105">
+                        <i class="fab fa-discord mr-2"></i> Unirse al Discord
+                    </a>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('jobModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        window.onload = () => renderJobs();
+    </script>
+</body>
+</html>
